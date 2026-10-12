@@ -1,0 +1,66 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isPasswordUser() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+    function memberPath() {
+      return /databases/$(database)/documents/members/$(request.auth.uid);
+    }
+    function isMember() {
+      return isPasswordUser()
+        && exists(memberPath())
+        && get(memberPath()).data.active == true;
+    }
+    function isAdmin() {
+      return isMember() && get(memberPath()).data.role == 'admin';
+    }
+
+    match /members/{userId} {
+      // Kullanıcı kendi durumunu; yönetici tüm üyeleri okuyabilir.
+      allow get: if isPasswordUser()
+        && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+
+      // Yeni kayıt: yalnızca kendi UID'siyle, KAPALI kullanıcı olarak oluşabilir.
+      allow create: if isPasswordUser()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['email', 'active', 'role', 'createdAt'])
+        && request.resource.data.keys().hasAll(['email', 'active', 'role', 'createdAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.active == false
+        && request.resource.data.role == 'member'
+        && request.resource.data.createdAt == request.time;
+
+      // Kullanıcı yalnızca kendi eksik e-postasını tamamlayabilir.
+      // Aktiflik ve admin rolünü asla kendi başına değiştiremez.
+      allow update: if (
+        isPasswordUser()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email'])
+        && request.resource.data.email == request.auth.token.email
+      ) || (
+        isAdmin()
+        && userId != request.auth.uid
+        && resource.data.get('role', 'member') != 'admin'
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['active', 'updatedAt', 'updatedBy'])
+        && request.resource.data.active is bool
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid
+      );
+
+      allow delete: if false;
+    }
+
+    match /products/{id} { allow read, write: if isMember(); }
+    match /orders/{id} { allow read, write: if isMember(); }
+    match /settings/{id} { allow read, write: if isMember(); }
+    match /orderRefs/{id} { allow read, write: if isMember(); }
+    match /adjustments/{id} { allow read, write: if isMember(); }
+    // Eski accessRequests belgeleri kalabilir; yeni sürüm bunları kullanmaz.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

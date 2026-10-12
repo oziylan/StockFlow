@@ -1,0 +1,23 @@
+.sf-admin-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;padding:2px 0}
+.sf-admin-toolbar>div:first-child{display:flex;flex-direction:column;gap:5px}
+.sf-admin-toolbar>div:first-child strong{font-size:17px;color:#193852}
+.sf-admin-toolbar>div:first-child small{color:#7b91aa;font-size:12px}
+.sf-admin-toolbar-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.sf-admin-dialog{max-width:520px;width:min(100%,520px)}
+.sf-admin-dialog .form-stack select{width:100%;min-height:42px;border:1px solid #dce7f1;padding:10px;border-radius:9px;color:#1a354c;background:#fff;font:inherit}
+.sf-admin-dialog .form-stack label{min-width:0}
+.sf-admin-dialog .form-stack input{min-width:0;width:100%}
+.sf-admin-dialog .checkbox-line{display:flex;flex-direction:row;align-items:center;gap:9px}
+.sf-admin-dialog .checkbox-line input{height:17px;width:17px;flex-shrink:0}
+.sf-admin-dialog .full{width:100%}
+.sf-admin-user-uid{font-size:11px;color:#8493a8;overflow-wrap:anywhere;padding:0 0 12px;margin:0}
+.sf-admin-warning{color:#b26529!important}
+.sf-admin-password-block,.sf-admin-delete-block{border-top:1px solid #e5ebf4;margin-top:20px;padding-top:18px}
+.sf-admin-password-block>strong{display:flex;align-items:center;gap:7px;font-size:13px}
+.sf-admin-password-block p,.sf-admin-delete-block p{color:#7d8c9d;font-size:12px;line-height:1.6}
+.sf-admin-password-row{display:flex;gap:8px;flex-wrap:wrap}
+.sf-admin-password-row input{min-width:150px;flex:1 1 200px;padding:10px;border:1px solid #dce7f1;border-radius:9px;font:inherit;font-size:12px}
+.sf-admin-password-row button{flex:0 1 auto;white-space:normal}
+.sf-admin-delete-block small{display:block;font-size:11px;color:#b26529;margin-top:10px}
+.sf-admin-delete-block .btn{white-space:normal}
+@media(max-width:600px){.sf-admin-toolbar-actions{width:100%}.sf-admin-toolbar-actions .btn{flex:1}.sf-admin-dialog{max-height:calc(100dvh - 20px);overflow-y:auto}.sf-admin-password-row button{width:100%}.sf-admin-toolbar{margin-top:6px}}

@@ -1,0 +1,23 @@
+.excel-import-card{min-width:0;grid-column:1 / -1;padding:24px;border-radius:16px}
+.excel-import-card .settings-head{margin-bottom:14px}
+.excel-file-picker{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:74px;padding:16px;border:1.5px dashed #a0b7d5;border-radius:13px;background:#f5f9ff;color:#1c4b8c;font-weight:700;cursor:pointer;text-align:center}
+.excel-file-picker input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.excel-file-picker:focus-within{outline:2px solid #2e80ef;outline-offset:3px}
+.excel-import-help{display:flex;align-items:flex-start;gap:6px;margin:12px 0;color:#6b7c92;font-size:12px;line-height:1.5}
+.excel-import-help svg{flex:none}
+.excel-import-error{padding:10px 12px;background:#fff0ef;color:#b32727;border-radius:9px;font-size:13px;overflow-wrap:anywhere}
+.excel-import-preview{margin-top:15px;min-width:0}
+.excel-import-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;font-size:14px;overflow-wrap:anywhere}
+.excel-import-meta small{color:#6b7c92}
+.excel-import-stats{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.excel-import-stats span{padding:8px 12px;background:#f3f7fb;border:1px solid #e3edf7;border-radius:10px;font-size:12px;color:#536983}
+.excel-import-stats strong{color:#152e4e;font-size:15px}
+.excel-import-table-scroll{max-width:100%;overflow-x:auto;border:1px solid #e3eaf4;border-radius:11px;margin-top:12px}
+.excel-import-table-scroll table{width:100%;border-collapse:collapse;min-width:520px;font-size:13px}
+.excel-import-table-scroll th,.excel-import-table-scroll td{padding:11px 12px;text-align:left;border-bottom:1px solid #ecf1f6;white-space:normal}
+.excel-import-table-scroll th{background:#f6f9fc;color:#4b607d;font-weight:700}
+.excel-import-table-scroll td:first-child{min-width:180px}
+.excel-import-warnings{margin-top:12px;font-size:12px;color:#ad6e10}
+.excel-import-warnings p{margin:5px 0}
+.excel-import-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:9px;margin-top:15px}
+@media(max-width:540px){.excel-import-card{padding:16px}.excel-import-actions .btn{flex:1;min-width:135px}.excel-import-stats span{flex:1;min-width:92px;text-align:center}}
