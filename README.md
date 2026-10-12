@@ -1,67 +1,141 @@
 # StockFlow
 
-A lightweight, mobile-first, cross-platform inventory, order and profit tracking Progressive Web App (PWA), built with **React**, **TypeScript**, **Vite** and **Firebase**.
+**A lightweight, multilingual inventory, order, and profit tracking Progressive Web App (PWA).**
 
-**Features:** product catalog, brands and SKU/EAN, stock adjustments, multi-product orders, per-order sale price snapshots, historical unit costs, carton/packaging cost tracking, real-time multi-user sync, reversible order cancellation, and XLSX export. A modern responsive interface is available in Turkish.
+StockFlow was created to replace a spreadsheet-based inventory workflow with a responsive application for desktop and mobile. It helps small teams track products, record multi-item orders, and understand profitability without the complexity of a full ERP system.
+
+**Built with:** React · TypeScript · Vite · Firebase Authentication · Cloud Firestore
+
+**Current version:** v1.2.1  
+**Interface languages:** Turkish · French · Dutch · English
+
+## Features
+
+- **Product management:** Add, edit, and archive products; track brands, SKU/EAN references, purchase costs, default selling prices, and inventory.
+- **Excel import and export:** Import product catalogs from `.xlsx` files, preview entries, and avoid duplicate imports; export operational data to Excel.
+- **No hard-coded catalog:** A new inventory starts empty. Users can import their own products from Excel or add them manually.
+- **Multi-product orders:** Record multiple products and quantities in one order, with a custom selling price for each line.
+- **Historical accuracy:** Store purchase-cost and sale-price snapshots on order lines so later price changes do not rewrite past results.
+- **Shipping and packaging:** Track shipping parcels and cartons separately, with configurable per-parcel and per-carton costs. Multiple products in one parcel incur only one parcel charge.
+- **Inventory consistency:** Use Firestore transactions for order creation and cancellation; canceling an order restores its stock.
+- **Stock adjustments:** Record incoming stock and corrections without treating them as sales.
+- **Real-time synchronization:** Keep authorized users up to date across devices.
+- **Access approval:** Users can register with email and password but cannot access inventory until an administrator approves their membership.
+- **Responsive PWA:** Desktop and mobile layouts with installable-app support in compatible browsers.
+- **Multilingual interface:** Switch between Turkish, French, Dutch, and English in Settings.
 
 ## Screens
 
-- **Overview:** total stock, sold, remaining, gross profit, recent orders and net profit after cartons.
-- **Products:** add/edit/archive products, default prices, inventory corrections and change history.
-- **Orders:** create multi-product orders with editable sale prices and carton counts, view/cancel previous orders.
-- **Settings:** carton unit cost, Excel export and optional sample catalog import.
+| Screen | Purpose |
+| --- | --- |
+| **Dashboard** | Inventory totals, sales, order history, and profit summaries |
+| **Products** | Product catalog, pricing, stock changes, and archiving |
+| **Orders** | Multi-product orders, parcel/carton counts, and cancellations |
+| **Management** | Review membership records and approve or revoke inventory access |
+| **Settings** | Language, shipping/carton costs, Excel import/export, and inventory utilities |
 
-## Run locally
+## Getting Started
 
-Requirements: **Node.js LTS**, npm.
+### Requirements
 
-```sh
+- Node.js LTS and npm
+- A Firebase project for cloud-connected use
+
+### Run locally
+
+```bash
 npm install
 npm run dev
 ```
 
-Open the displayed localhost address. Without Firebase environment variables, StockFlow runs in an explicitly labeled **browser-only demo mode** with six example products drawn from the owner's original inventory sheet. This mode is NOT cloud-connected.
+Open the local URL printed by Vite, typically `http://localhost:5173`.
 
-For cloud use, copy `.env.example` to `.env`, fill in your Firebase web app config, enable Email/Password Authentication and Cloud Firestore, deploy `firestore.rules`, and create `members/{uid}` documents with `{ active: true }` for authorized users. Then run the build and deploy to Firebase Hosting.
+### Firebase setup
 
-**Full Windows/Firebase/iPhone/Android setup in Turkish:** [KURULUM-TR.md](KURULUM-TR.md).
+1. Create a Firebase project and register a Web app.
+2. Enable **Authentication → Email/Password** and create a **Cloud Firestore** database.
+3. Copy `.env.example` to `.env.local` and fill in the Firebase web configuration values.
+4. Deploy the repository's Firestore security rules to **your own Firebase project**:
 
-## Data logic
+   ```bash
+   firebase login
+   firebase deploy --only firestore:rules --project YOUR_PROJECT_ID
+   ```
 
-- Currency values are stored as **integer euro cents** to avoid floating-point money errors.
-- Each order item snapshots **unit sale price and unit cost**. Editing current product prices never changes historical profitability.
-- Inventory removal through an order uses a **Cloud Firestore transaction** so simultaneous writes cannot silently oversell.
-- Order references, when supplied, have a SHA-256-based uniqueness document; an active duplicate cannot be submitted.
-- Cancellation atomically restores stock and retains the canceled order in history.
-- Carton expense = actual carton count × per-order carton cost snapshot. It is not charged per product.
-- Manual stock adjustments affect physical inventory but are not treated as sales.
-- Product deletion is replaced by archiving to preserve order history.
+5. Register your first account. In Firestore, set that account's `members/{uid}` document to `active: true` and `role: "admin"` to bootstrap administration.
+6. Subsequent users register normally and wait for approval in the Management screen.
 
-**Accounting disclaimer:** Profit is before taxes, marketplace fees, shipping, and other expenses. No batch costing (FIFO / weighted average) is implemented. This is a lightweight operations tracker, not full ERP/accounting software.
+**Security:** Review the rules before deployment. Do not use open read/write Firestore rules with real business data. The frontend alone does not enforce access permissions.
 
-## Security
+### Production build and hosting
 
-The app does not offer public user registration. An administrator manually provisions Auth users and `members/{uid}` entries in Firebase Console. **Firestore Security Rules, not frontend hiding, determine access**. Members have equal edit permissions per the intended workflow. `service account` secrets must never be committed.
+```bash
+npm run build
+firebase deploy --only hosting --project YOUR_PROJECT_ID
+```
 
-## Tech
+Firebase Hosting must be configured to serve the Vite `dist` directory with a single-page-app rewrite to `index.html`.
 
-- React + TypeScript + Vite
+## Inventory and Profit Logic
+
+Each order line captures the **unit selling price** and **unit purchase cost** at the time of sale. An order also captures the carton and shipping rates used at that time.
+
+```text
+Revenue                 = Σ (quantity × unit selling price)
+Cost of goods sold      = Σ (quantity × unit purchase cost)
+Gross profit            = Revenue − Cost of goods sold
+Carton expense          = Carton count × carton unit cost
+Shipping expense        = Parcel count × shipping cost per parcel
+Profit after expenses   = Gross profit − Carton expense − Shipping expense
+```
+
+Shipping is counted **per parcel, not per product**. For example, two items sent together in one parcel incur one shipping charge. Carton quantity is recorded independently.
+
+Amounts are represented as integer euro cents to avoid common floating-point rounding problems. Firestore transactions help keep stock and order updates consistent.
+
+**Accounting scope:** The profit calculation does not automatically include VAT, marketplace commissions, refunds, or other operating expenses. The app is an operational tracker, not an accounting or ERP replacement.
+
+## Technology
+
+- React and TypeScript
+- Vite
 - Firebase Authentication (Email/Password)
-- Firestore (real-time snapshots + atomic transactions)
-- Firebase Hosting (HTTPS, optional)
-- PWA manifest + service worker (minimal shell, online-first)
-- Lucide icons, custom responsive CSS
-- ExcelJS on-demand for `.xlsx` exports
+- Cloud Firestore (real-time listeners and transactions)
+- Firebase Hosting (optional deployment)
+- Progressive Web App assets
+- Lucide icons and responsive CSS
+- ExcelJS for XLSX workflows
+
+The current membership-approval workflow does **not** require Cloud Functions or the Firebase Blaze plan. Firebase free-tier usage limits still apply.
 
 ## Scripts
 
-```sh
+```bash
 npm run dev
 npm run build
 npm run preview
 npm run test
 ```
 
-## License / source
+## Roadmap
 
-Personal portfolio project. Add a `LICENSE` file of your choice before distributing as open source.
+- [ ] Improve accessibility and keyboard navigation
+- [ ] Expand automated tests for inventory and order flows
+- [ ] Refine mobile and offline experiences
+- [ ] Add screenshots and a short demo video
+- [ ] Improve reporting and filtering
+
+## Privacy and Repository Hygiene
+
+- Never commit `.env.local`, service account keys, customer data, or private business exports.
+- Keep `.env.example` as a configuration template without personal values.
+- Use demo or anonymized data in public screenshots.
+- Firebase Web SDK configuration is not a substitute for secure Firestore rules.
+
+## Project Background
+
+StockFlow began as a practical tool for a small e-commerce operation. Its goal is to make everyday inventory and order entry fast, understandable, and accessible across devices while keeping historical sales calculations consistent.
+
+## License
+
+No open-source license has been selected yet. Add a `LICENSE` file if you decide to release the source under an open-source license.

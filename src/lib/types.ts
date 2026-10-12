@@ -25,6 +25,8 @@ export interface Order {
   items: OrderLine[];
   cartonCount: number;
   cartonUnitCostCents: number;
+  shippingParcelCount?: number;   // Eski siparişlerde mevcut olmayabilir
+  shippingUnitCostCents?: number;  // Sipariş anındaki kargo fiyatı
   revenueCents: number;
   grossProfitCents: number;
   createdAt: number;
@@ -41,7 +43,7 @@ export interface Adjustment {
   createdBy: string;
   createdAt: number;
 }
-export interface Settings { cartonUnitCostCents: number; seeded: boolean }
+export interface Settings { cartonUnitCostCents: number; shippingUnitCostCents: number; seeded: boolean; shippingSeparatedAt?: number }
 export interface AppData {
   products: Product[];
   orders: Order[];
@@ -50,7 +52,7 @@ export interface AppData {
 }
 export interface NewProduct { name: string; brand: string; sku: string; initialQuantity: number; unitCostCents: number; salePriceCents: number }
 export interface NewOrderLine { productId: string; quantity: number; unitSalePriceCents: number }
-export interface NewOrder { reference: string; items: NewOrderLine[]; cartonCount: number }
+export interface NewOrder { reference: string; items: NewOrderLine[]; cartonCount: number; shippingParcelCount: number }
 export type DataListener = (value: AppData) => void;
 export interface StockRepository {
   subscribe: (listener: DataListener, onError: (e: Error) => void) => () => void;
@@ -60,6 +62,7 @@ export interface StockRepository {
   saveOrder: (order: NewOrder) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
   updateCartonCost: (priceCents: number) => Promise<void>;
-  seedProducts: () => Promise<void>;
+  updateShippingCost: (priceCents: number) => Promise<void>;
+  separateShippingFromExistingCosts: () => Promise<{updated: number; skipped: number}>;
   importProducts: (products: NewProduct[]) => Promise<{added: number; skipped: number}>;
 }

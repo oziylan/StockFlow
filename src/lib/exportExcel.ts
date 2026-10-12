@@ -11,7 +11,7 @@ export async function exportExcel(data: AppData) {
   sheet.columns = [
     { header: 'Ürün İsmi', key: 'name', width: 42 },
     { header: 'Toplam Adet', key: 'total', width: 17 },
-    { header: 'Birim Maliyet (€)', key: 'cost', width: 20 },
+    { header: 'Ürün Maliyeti, Kargo Hariç (€)', key: 'cost', width: 29 },
     { header: 'Satış Fiyatı (€)', key: 'price', width: 20 },
     { header: 'Satılan Adet', key: 'sold', width: 18 },
     { header: 'Kalan Adet', key: 'remaining', width: 17 },
@@ -28,7 +28,9 @@ export async function exportExcel(data: AppData) {
   sheet.addRow([]);
   sheet.addRow(['Kullanılan toplam karton', s.cartonCount]);
   sheet.addRow(['Toplam karton gideri (€)', s.cartonCostCents / 100]);
-  sheet.addRow(['Karton sonrası kâr (€)', s.netProfitCents / 100]);
+  sheet.addRow(['Toplam kargo paketi', s.shippingParcelCount]);
+  sheet.addRow(['Kargo gideri (€)', s.shippingCostCents / 100]);
+  sheet.addRow(['Karton ve kargo sonrası kâr (€)', s.netProfitCents / 100]);
   sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF173250' } };
   sheet.views = [{ state: 'frozen', ySplit: 1 }];
@@ -40,18 +42,20 @@ export async function exportExcel(data: AppData) {
     { header: 'Durum', key: 'status', width: 16 }, { header: 'Ürün Adedi', key: 'qty', width: 16 },
     { header: 'Ciro (€)', key: 'revenue', width: 18 }, { header: 'Brüt Kâr (€)', key: 'profit', width: 20 },
     { header: 'Karton Sayısı', key: 'cartons', width: 17 }, { header: 'Karton Gideri (€)', key: 'cartonExpense', width: 22 },
+    { header: 'Kargo Paketi', key: 'parcels', width: 17 }, { header: 'Kargo Gideri (€)', key: 'shippingExpense', width: 21 },
+    { header: 'Karton + Kargo Sonrası Kâr (€)', key: 'net', width: 29 },
     { header: 'İşlemi Yapan', key: 'user', width: 32 },
   ];
   const lines = book.addWorksheet('Sipariş Kalemleri');
   lines.columns = [
     { header: 'Sipariş ID', key: 'id', width: 34 }, { header: 'Tarih', key: 'date', width: 24 },
     { header: 'Ürün', key: 'product', width: 42 }, { header: 'Adet', key: 'qty', width: 12 },
-    { header: 'Birim Satış (€)', key: 'price', width: 20 }, { header: 'Birim Maliyet (€)', key: 'cost', width: 20 },
+    { header: 'Birim Satış (€)', key: 'price', width: 20 }, { header: 'Ürün Maliyeti (€)', key: 'cost', width: 23 },
     { header: 'Ciro (€)', key: 'revenue', width: 18 }, { header: 'Brüt Kâr (€)', key: 'profit', width: 22 }
   ];
   for (const o of data.orders) {
     const d = new Date(o.createdAt).toLocaleString('tr-TR');
-    orders.addRow({ date: d, ref: o.reference || o.id, status: o.status === 'active' ? 'Aktif' : 'İptal', qty: o.items.reduce((n, l) => n + l.quantity, 0), revenue: o.revenueCents / 100, profit: o.grossProfitCents / 100, cartons: o.cartonCount, cartonExpense: o.cartonCount * o.cartonUnitCostCents / 100, user: o.createdBy });
+    orders.addRow({ date: d, ref: o.reference || o.id, status: o.status === 'active' ? 'Aktif' : 'İptal', qty: o.items.reduce((n, l) => n + l.quantity, 0), revenue: o.revenueCents / 100, profit: o.grossProfitCents / 100, cartons: o.cartonCount, cartonExpense: o.cartonCount * o.cartonUnitCostCents / 100, parcels: o.shippingParcelCount ?? 0, shippingExpense: (o.shippingParcelCount ?? 0)*(o.shippingUnitCostCents ?? 0)/100, net: (o.grossProfitCents-o.cartonCount*o.cartonUnitCostCents-(o.shippingParcelCount ?? 0)*(o.shippingUnitCostCents ?? 0))/100, user: o.createdBy });
     for (const l of o.items) lines.addRow({ id: o.id, date: d, product: l.productName, qty: l.quantity, price: l.unitSalePriceCents / 100, cost: l.unitCostCents / 100, revenue: l.quantity * l.unitSalePriceCents / 100, profit: l.quantity * (l.unitSalePriceCents - l.unitCostCents) / 100 });
   }
   for (const ws of [orders, lines]) {

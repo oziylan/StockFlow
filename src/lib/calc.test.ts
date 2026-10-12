@@ -6,7 +6,7 @@ const orders: Order[] = [
   { id:'o1', reference:'a',items:[{ productId:'p1', productName:'Test ürün', quantity:3, unitSalePriceCents:2000, unitCostCents:1000 }], cartonCount:1, cartonUnitCostCents:50, revenueCents:6000, grossProfitCents:3000, createdAt:0, createdBy:'tester',status:'active' },
   { id:'o2', reference:'b',items:[{ productId:'p1', productName:'Test ürün', quantity:20, unitSalePriceCents:1500, unitCostCents:1000 }], cartonCount:2, cartonUnitCostCents:50, revenueCents:30000, grossProfitCents:10000, createdAt:0, createdBy:'tester',status:'active' }
 ];
-const data:AppData={products:[product],orders,adjustments:[],settings:{cartonUnitCostCents:50,seeded:true}};
+const data:AppData={products:[product],orders,adjustments:[],settings:{cartonUnitCostCents:50,shippingUnitCostCents:360,seeded:true}};
 describe('sales at changing prices',()=>{
   it('3 × €20 plus 20 × €15 = €360 revenue, €130 gross profit',()=>{
     expect(stats(data).revenueCents).toBe(36000);
@@ -23,6 +23,20 @@ describe('sales at changing prices',()=>{
   it('properly calculates order-specific cartons',()=>{
     const t=orderTotals([{productId:'p1',quantity:2,unitSalePriceCents:1500}],[product],3,50);
     expect(t.revenueCents).toBe(3000);expect(t.grossProfitCents).toBe(1000);expect(t.netProfitCents).toBe(850);
+  });
+  it('charges shipping once for two items in one parcel, not twice',()=>{
+    const updatedProduct={...product,unitCostCents:840,salePriceCents:2500};
+    const result=orderTotals([{productId:'p1',quantity:2,unitSalePriceCents:2500}],[updatedProduct],1,50,1,360);
+    expect(result.revenueCents).toBe(5000);
+    expect(result.itemCostCents).toBe(1680);
+    expect(result.shippingCostCents).toBe(360);
+    expect(result.netProfitCents).toBe(2910);
+    const twoParcels=orderTotals([{productId:'p1',quantity:2,unitSalePriceCents:2500}],[updatedProduct],1,50,2,360);
+    expect(twoParcels.netProfitCents).toBe(2550);
+  });
+  it('preserves old orders without a separate shipping charge',()=>{
+    expect(stats(data).shippingCostCents).toBe(0);
+    expect(stats(data).netProfitCents).toBe(12850);
   });
   it('rejects invalid money input',()=>{
     expect(parseMoney('12,50')).toBe(1250);

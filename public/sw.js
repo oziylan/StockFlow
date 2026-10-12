@@ -1,5 +1,5 @@
 // Uygulama kabuğu önbelleği; Firebase verilerini veya API yanıtlarını önbelleğe almayız.
-const CACHE = 'stockflow-shell-v1';
+const CACHE = 'stockflow-shell-v1.2.2';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(['/icon.svg', '/'])));
   self.skipWaiting();

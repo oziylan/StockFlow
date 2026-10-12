@@ -1,14 +1,24 @@
+import { translate } from '../i18n';
 import {
   collection, doc, addDoc, getDocs, onSnapshot, runTransaction, writeBatch,
   setDoc, updateDoc, type Unsubscribe
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { INITIAL_PRODUCTS } from './seed';
 import { matchesExisting } from './importExcel';
 import { orderTotals, validQty } from './calc';
 import type { AppData, NewOrder, NewProduct, Order, Product, StockRepository, DataListener, Adjustment } from './types';
 
-const defaults: AppData = { products: [], orders: [], adjustments: [], settings: { cartonUnitCostCents: 50, seeded: false } };
+const defaults: AppData = { products: [], orders: [], adjustments: [], settings: { cartonUnitCostCents: 50, shippingUnitCostCents: 360, seeded: false } };
+// Yalnızca eski Excel'deki altı ürün için geçerli, tek seferlik maliyet düzeltmesi.
+const ORIGINAL_COSTS = new Map([
+  ['Single Towel 500 gr', 1200],
+  ['Kitchen Towel 6×4 (24 rulo)', 1200],
+  ['Toilet Paper 32×3 – 2 kat (96 rulo)', 1700],
+  ['Toilet Paper 32×3 – 3 kat (96 rulo)', 1900],
+  ['Toilet Paper 24×3 – 2 kat (72 rulo)', 1500],
+  ['Toilet Paper 16×3 – 3 kat (48 rulo)', 1100],
+]);
+const SHIPPING_IN_OLD_COST_CENTS = 360;
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
 const assertMoney = (n: number) => { if (!validQty(n) || n > 100_000_000_00) throw new Error('Fiyat geçersiz.'); };
 function validateProduct(p: NewProduct) {
@@ -24,6 +34,7 @@ async function hashRef(value: string): Promise<string> {
 }
 function verifyOrder(order: NewOrder) {
   if (!validQty(order.cartonCount)) throw new Error('Karton sayısı geçersiz.');
+  if (!validQty(order.shippingParcelCount)) throw new Error('Kargo paketi sayısı geçersiz.');
   if (!order.items.length) throw new Error('Sipariş için en az bir ürün seç.');
   const ids = new Set<string>();
   for (const item of order.items) {
@@ -39,8 +50,8 @@ const newProductData = (input: NewProduct): Product => ({
   unitCostCents: input.unitCostCents, salePriceCents: input.salePriceCents,
   archived: false, createdAt: Date.now(), updatedAt: Date.now()
 });
-function makeOrder(order: NewOrder, products: Product[], costCents: number, by: string, id: string): Order {
-  const totals = orderTotals(order.items, products, order.cartonCount, costCents);
+function makeOrder(order: NewOrder, products: Product[], costCents: number, shippingCostCents: number, by: string, id: string): Order {
+  const totals = orderTotals(order.items, products, order.cartonCount, costCents, order.shippingParcelCount, shippingCostCents);
   return {
     id, reference: order.reference.trim(),
     items: order.items.map(l => {
@@ -51,6 +62,7 @@ function makeOrder(order: NewOrder, products: Product[], costCents: number, by: 
       return { productId: p.id, productName: p.name, quantity: l.quantity, unitCostCents: p.unitCostCents, unitSalePriceCents: l.unitSalePriceCents };
     }),
     cartonCount: order.cartonCount, cartonUnitCostCents: costCents,
+    shippingParcelCount: order.shippingParcelCount, shippingUnitCostCents: shippingCostCents,
     revenueCents: totals.revenueCents, grossProfitCents: totals.grossProfitCents,
     status: 'active', createdAt: Date.now(), createdBy: by
   };
@@ -62,7 +74,7 @@ class DemoRepository implements StockRepository {
   constructor() {
     let state: AppData | null = null;
     try { const text = localStorage.getItem('stockflow-demo-v1'); if (text) state = JSON.parse(text) as AppData; } catch { /* corrupted local data */ }
-    this.value = state && Array.isArray(state.products) ? state : { ...defaults, products: INITIAL_PRODUCTS.map((p, index) => ({ ...newProductData(p), id: `demo-${index+1}` })), settings: { ...defaults.settings, seeded: true } };
+    this.value = state && Array.isArray(state.products) ? state : structuredClone(defaults);
   }
   subscribe(listener: DataListener): () => void { this.listeners.add(listener); listener(structuredClone(this.value)); return () => this.listeners.delete(listener); }
   private commit() { localStorage.setItem('stockflow-demo-v1', JSON.stringify(this.value)); this.listeners.forEach(l => l(structuredClone(this.value))); }
@@ -89,7 +101,7 @@ class DemoRepository implements StockRepository {
   async saveOrder(input: NewOrder) {
     verifyOrder(input);
     if (input.reference.trim() && this.value.orders.some(o => o.status === 'active' && cleanRef(o.reference) === cleanRef(input.reference))) throw new Error('Bu sipariş referansı zaten kullanılmış.');
-    const order = makeOrder(input, this.value.products, this.value.settings.cartonUnitCostCents, 'Demo kullanıcı', crypto.randomUUID());
+    const order = makeOrder(input, this.value.products, this.value.settings.cartonUnitCostCents, this.value.settings.shippingUnitCostCents ?? 360, 'Demo kullanıcı', crypto.randomUUID());
     for (const l of order.items) { const p = this.value.products.find(p => p.id === l.productId)!; p.quantity -= l.quantity; p.sold += l.quantity; }
     this.value.orders.unshift(order); this.commit();
   }
@@ -99,6 +111,21 @@ class DemoRepository implements StockRepository {
     o.status = 'canceled'; o.canceledAt = Date.now(); this.commit();
   }
   async updateCartonCost(price: number) { assertMoney(price); this.value.settings.cartonUnitCostCents = price; this.commit(); }
+  async updateShippingCost(price: number) { assertMoney(price); this.value.settings.shippingUnitCostCents = price; this.commit(); }
+  async separateShippingFromExistingCosts() {
+    if (this.value.settings.shippingSeparatedAt) throw new Error('Maliyet ayrıştırması daha önce yapılmış.');
+    let updated = 0, skipped = 0;
+    for (const product of this.value.products) {
+      const oldCost = ORIGINAL_COSTS.get(product.name);
+      if (oldCost === undefined) continue;
+      if (product.unitCostCents !== oldCost) { skipped++; continue; }
+      product.unitCostCents -= SHIPPING_IN_OLD_COST_CENTS;
+      product.updatedAt = Date.now(); updated++;
+    }
+    if (!updated) throw new Error('Düzeltilecek eski maliyet bulunamadı; ürünler zaten güncellenmiş olabilir.');
+    this.value.settings.shippingSeparatedAt = Date.now(); this.commit();
+    return { updated, skipped };
+  }
   async importProducts(items: NewProduct[]) {
     if (!items.length || items.length > 250) throw new Error('Aktarılacak ürün sayısı 1–250 arasında olmalı.');
     let added = 0;
@@ -112,7 +139,6 @@ class DemoRepository implements StockRepository {
     if (added) this.commit();
     return { added, skipped };
   }
-  async seedProducts() { if (this.value.products.length) throw new Error('Önce mevcut ürünleri kontrol et; liste boş değil.'); this.value.products = INITIAL_PRODUCTS.map(p => ({ ...newProductData(p), id: crypto.randomUUID() })); this.commit(); }
 }
 
 class FirestoreRepository implements StockRepository {
@@ -173,7 +199,8 @@ class FirestoreRepository implements StockRepository {
         return { ...s.data(), id: refs[i].id } as Product;
       });
       const cartonCostCents = settingsSnapshot.exists() ? Number(settingsSnapshot.data().cartonUnitCostCents ?? 50) : 50;
-      const order = makeOrder(input, products, cartonCostCents, this.email, orderRef.id);
+      const shippingUnitCostCents = settingsSnapshot.exists() ? Number(settingsSnapshot.data().shippingUnitCostCents ?? 360) : 360;
+      const order = makeOrder(input, products, cartonCostCents, shippingUnitCostCents, this.email, orderRef.id);
       order.items.forEach((l, i) => {
         const p = products[i];
         tx.update(refs[i], { quantity: p.quantity - l.quantity, sold: p.sold + l.quantity, updatedAt: Date.now() });
@@ -203,6 +230,31 @@ class FirestoreRepository implements StockRepository {
     });
   }
   async updateCartonCost(cents: number) { assertMoney(cents); await setDoc(doc(this.database, 'settings', 'global'), { cartonUnitCostCents: cents }, { merge: true }); }
+  async updateShippingCost(cents: number) { assertMoney(cents); await setDoc(doc(this.database, 'settings', 'global'), { shippingUnitCostCents: cents }, { merge: true }); }
+  async separateShippingFromExistingCosts() {
+    const settingsRef = doc(this.database, 'settings', 'global');
+    const snapshot = await getDocs(collection(this.database, 'products'));
+    const refs = snapshot.docs.filter(s => ORIGINAL_COSTS.has(s.data().name)).map(s => s.ref);
+    if (!refs.length) throw new Error('Başlangıçtaki altı üründen hiçbiri bulunamadı.');
+    return runTransaction(this.database, async tx => {
+      // Firestore işleminde bütün okumalar, yazmalardan önce yapılır.
+      const [settingsSnap, ...docs] = await Promise.all([tx.get(settingsRef), ...refs.map(r => tx.get(r))]);
+      if (settingsSnap.exists() && settingsSnap.data().shippingSeparatedAt) throw new Error('Maliyet ayrıştırması zaten yapılmış.');
+      let updated = 0, skipped = 0;
+      docs.forEach((s, i) => {
+        if (!s.exists()) return;
+        const p = s.data() as Product;
+        const oldCost = ORIGINAL_COSTS.get(p.name);
+        if (oldCost === undefined) return;
+        if (p.unitCostCents !== oldCost) { skipped++; return; }
+        tx.update(refs[i], { unitCostCents: oldCost - SHIPPING_IN_OLD_COST_CENTS, updatedAt: Date.now() });
+        updated++;
+      });
+      if (!updated) throw new Error('Düzeltilecek eski maliyet bulunamadı; ürünler zaten güncellenmiş olabilir.');
+      tx.set(settingsRef, { shippingSeparatedAt: Date.now(), shippingUnitCostCents: settingsSnap.exists() ? (settingsSnap.data().shippingUnitCostCents ?? 360) : 360 }, {merge: true});
+      return { updated, skipped };
+    });
+  }
   async importProducts(items: NewProduct[]) {
     if (!items.length || items.length > 250) throw new Error('Aktarılacak ürün sayısı 1–250 arasında olmalı.');
     for (const item of items) validateProduct(item);
@@ -227,19 +279,6 @@ class FirestoreRepository implements StockRepository {
     await batch.commit();
     return { added: unique.length, skipped };
   }
-  async seedProducts() {
-    const settingsRef = doc(this.database, 'settings', 'global');
-    const refs = INITIAL_PRODUCTS.map(() => doc(collection(this.database, 'products')));
-    await runTransaction(this.database, async tx => {
-      const s = await tx.get(settingsRef);
-      if (s.exists() && s.data().seeded) throw new Error('Örnek ürünler daha önce yüklenmiş.');
-      for (let i = 0; i < refs.length; i++) {
-        const { id: _id, ...fields } = newProductData(INITIAL_PRODUCTS[i]); void _id;
-        tx.set(refs[i], fields);
-      }
-      tx.set(settingsRef, { seeded: true, cartonUnitCostCents: s.exists() ? (s.data().cartonUnitCostCents ?? 50) : 50 }, { merge: true });
-    });
-  }
 }
 let demoRepository: DemoRepository | null = null;
 export function getRepository(email?: string): StockRepository {
@@ -249,7 +288,7 @@ export function getRepository(email?: string): StockRepository {
 }
 export function friendlyError(error: unknown): string {
   const raw = message(error);
-  if (raw.includes('permission-denied')) return 'Firebase izin hatası: kullanıcı üyeliğini ve Firestore güvenlik kurallarını kontrol et.';
-  if (raw.includes('unavailable')) return 'İnternet bağlantısı yok veya Firebase şu anda erişilemiyor.';
-  return raw;
+  if (raw.includes('permission-denied')) return translate('Firebase izin hatası: kullanıcı üyeliğini ve Firestore güvenlik kurallarını kontrol et.');
+  if (raw.includes('unavailable')) return translate('İnternet bağlantısı yok veya Firebase şu anda erişilemiyor.');
+  return translate(raw);
 }

@@ -1,0 +1,92 @@
+/* StockFlow v1.2.2 — Packaging / shipping section, mobile-first. */
+.order-extra-costs {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-top: 18px;
+}
+.order-extra-costs .carton-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0;
+  padding: 14px 0;
+  min-width: 0;
+  border-top: 1px solid #eaf0f5;
+  border-bottom: none;
+}
+.order-extra-costs .carton-row:last-child {
+  border-bottom: 1px solid #eaf0f5;
+}
+.order-extra-costs .carton-icon {
+  flex: 0 0 41px;
+}
+.order-extra-costs .carton-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.order-extra-costs .carton-copy strong,
+.order-extra-costs .carton-copy small {
+  overflow-wrap: anywhere;
+}
+.order-extra-costs .qty-controls {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+/* Blue truck makes the parcel charge visually different from the carton charge. */
+.order-extra-costs .shipping-row .carton-icon {
+  color: #2877d8;
+  background: #eaf3ff;
+}
+@media (max-width: 720px) {
+  .order-overlay { padding: 0; }
+  .order-sheet {
+    height: 100vh; /* fallback for older devices */
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .order-head { flex: 0 0 auto; }
+  .order-content {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+  .order-footer {
+    flex: 0 0 auto;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    background: #fff;
+    z-index: 2;
+  }
+  .order-extra-costs {
+    background: #f7faff;
+    border: 1px solid #e7eef8;
+    border-radius: 12px;
+    padding: 3px 12px;
+  }
+  .order-extra-costs .carton-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .order-extra-costs .carton-icon {
+    width: 36px;
+    height: 36px;
+    flex: none;
+  }
+  .order-extra-costs .carton-copy strong { font-size: 12px; }
+  .order-extra-costs .carton-copy small { font-size: 10px; line-height: 1.4; }
+  .order-extra-costs .qty-controls { margin-left: 0; }
+  .order-extra-costs .qty-controls button { min-width: 30px; }
+}
+@media (max-width: 365px) {
+  .order-extra-costs { padding-inline: 8px; }
+  .order-extra-costs .carton-row { grid-template-columns: 31px minmax(0, 1fr) auto; gap: 6px; }
+  .order-extra-costs .carton-icon { width: 31px; height: 31px; }
+  .order-extra-costs .qty-controls button { min-width: 27px; width: 27px; }
+  .order-extra-costs .qty-controls span { min-width: 22px; }
+}

@@ -1,7 +1,8 @@
+import { getLocale } from '../i18n/language';
 import type { AppData, NewOrderLine, Order, Product } from './types';
-export const eur = (cents: number) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-export const num = (n: number) => new Intl.NumberFormat('tr-TR').format(n);
-export const dateTime = (n: number) => new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(n));
+export const eur = (cents: number) => new Intl.NumberFormat(getLocale(), { style: 'currency', currency: 'EUR' }).format(cents / 100);
+export const num = (n: number) => new Intl.NumberFormat(getLocale()).format(n);
+export const dateTime = (n: number) => new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(n));
 export function parseMoney(text: string): number {
   const clean = text.trim().replace(/\s/g, '').replace(',', '.');
   if (!/^\d+(\.\d{1,2})?$/.test(clean)) return Number.NaN;
@@ -9,7 +10,7 @@ export function parseMoney(text: string): number {
 }
 export const moneyInput = (cents: number) => (cents / 100).toFixed(2);
 export function validQty(value: number) { return Number.isSafeInteger(value) && value >= 0; }
-export function orderTotals(items: NewOrderLine[], products: Product[], cartonCount: number, cartonCostCents: number) {
+export function orderTotals(items: NewOrderLine[], products: Product[], cartonCount: number, cartonCostCents: number, shippingParcelCount = 0, shippingUnitCostCents = 0) {
   let revenueCents = 0, itemCostCents = 0;
   for (const item of items) {
     const product = products.find(p => p.id === item.productId);
@@ -18,7 +19,9 @@ export function orderTotals(items: NewOrderLine[], products: Product[], cartonCo
     itemCostCents += product.unitCostCents * item.quantity;
   }
   const grossProfitCents = revenueCents - itemCostCents;
-  return { revenueCents, itemCostCents, grossProfitCents, cartonCostCents: cartonCount * cartonCostCents, netProfitCents: grossProfitCents - cartonCount * cartonCostCents };
+  const cartonExpenseCents = cartonCount * cartonCostCents;
+  const shippingCostCents = shippingParcelCount * shippingUnitCostCents;
+  return { revenueCents, itemCostCents, grossProfitCents, cartonCostCents: cartonExpenseCents, shippingCostCents, netProfitCents: grossProfitCents - cartonExpenseCents - shippingCostCents };
 }
 export function orderRevenue(order: Order) { return order.items.reduce((v, l) => v + l.unitSalePriceCents * l.quantity, 0); }
 export function orderGrossProfit(order: Order) { return order.items.reduce((v, l) => v + (l.unitSalePriceCents - l.unitCostCents) * l.quantity, 0); }
@@ -31,7 +34,10 @@ export function stats(data: AppData) {
   const grossProfitCents = orders.reduce((v, o) => v + o.grossProfitCents, 0);
   const cartonCount = orders.reduce((v, o) => v + o.cartonCount, 0);
   const cartonCostCents = orders.reduce((v, o) => v + o.cartonCount * o.cartonUnitCostCents, 0);
-  return { total, sold, remaining, revenueCents, grossProfitCents, cartonCount, cartonCostCents, netProfitCents: grossProfitCents - cartonCostCents, activeOrders: orders.length };
+  // Eski siparişlerde kargo zaten ürün maliyetindeydi: tekrar düşmüyoruz.
+  const shippingParcelCount = orders.reduce((v, o) => v + (o.shippingParcelCount ?? 0), 0);
+  const shippingCostCents = orders.reduce((v, o) => v + (o.shippingParcelCount ?? 0) * (o.shippingUnitCostCents ?? 0), 0);
+  return { total, sold, remaining, revenueCents, grossProfitCents, cartonCount, cartonCostCents, shippingParcelCount, shippingCostCents, netProfitCents: grossProfitCents - cartonCostCents - shippingCostCents, activeOrders: orders.length };
 }
 export function byProduct(data: AppData): Map<string, { revenueCents: number; grossProfitCents: number }> {
   const map = new Map<string, { revenueCents: number; grossProfitCents: number }>();
