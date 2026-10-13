@@ -299,5 +299,12 @@
   "ürün atlandı": "producten overgeslagen",
   "Komisyon, KDV ve diğer giderler dahil değildir.": "Exclusief commissies, btw en andere kosten.",
   "Ürün maliyeti (kargo hariç)": "Productkost (excl. verzending)",
-  "Ürün maliyeti, kargo hariç (€) *": "Productkost excl. verzending (€) *"
+  "Ürün maliyeti, kargo hariç (€) *": "Productkost excl. verzending (€) *",
+  "Görünüm": "Weergave",
+  "Göz konforun için tema seç. Tercihin bu cihazda saklanır.": "Kies een comfortabel thema. Je voorkeur wordt op dit apparaat opgeslagen.",
+  "Gündüz": "Licht",
+  "Gece": "Donker",
+  "Otomatik": "Systeem",
+  "Gündüz moduna geç": "Overschakelen naar lichte modus",
+  "Gece moduna geç": "Overschakelen naar donkere modus"
 }

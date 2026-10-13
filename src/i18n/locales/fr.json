@@ -299,5 +299,12 @@
   "ürün atlandı": "produits ignorés",
   "Komisyon, KDV ve diğer giderler dahil değildir.": "Hors commissions, TVA et autres frais.",
   "Ürün maliyeti (kargo hariç)": "Coût produit (hors livraison)",
-  "Ürün maliyeti, kargo hariç (€) *": "Coût produit hors livraison (€) *"
+  "Ürün maliyeti, kargo hariç (€) *": "Coût produit hors livraison (€) *",
+  "Görünüm": "Apparence",
+  "Göz konforun için tema seç. Tercihin bu cihazda saklanır.": "Choisissez un thème confortable. Votre choix est enregistré sur cet appareil.",
+  "Gündüz": "Clair",
+  "Gece": "Sombre",
+  "Otomatik": "Système",
+  "Gündüz moduna geç": "Passer en mode clair",
+  "Gece moduna geç": "Passer en mode sombre"
 }

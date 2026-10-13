@@ -1,0 +1,332 @@
+/* StockFlow v1.3.0 — accessible light/dark themes.
+   Intentionally separate from the legacy CSS: no changes to inventory or Firebase.
+   [data-theme] lives on <html>, so portals/dialogs/login inherit it too. */
+
+:root {
+  --sf-bg: #f5f8fc;
+  --sf-surface: #ffffff;
+  --sf-input: #ffffff;
+  --sf-raised: #f4f8fd;
+  --sf-muted-surface: #f6f9fc;
+  --sf-border: #e3ebf4;
+  --sf-ink: #192b43;
+  --sf-secondary: #687f98;
+  --sf-subtle: #8295aa;
+  --sf-accent: #1877f2;
+  --sf-shadow: 0 7px 25px rgba(38, 75, 118, .045);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --sf-bg: #0e1625;
+  --sf-surface: #182438;
+  --sf-input: #1d2b41;
+  --sf-raised: #24354b;
+  --sf-muted-surface: #1c2a3e;
+  --sf-border: #33465e;
+  --sf-ink: #e8f0fa;
+  --sf-secondary: #b2c2d5;
+  --sf-subtle: #9cacc2;
+  --sf-accent: #7bb5ff;
+  --sf-shadow: 0 9px 30px rgba(0, 0, 0, .15);
+}
+
+/* Controls are visible on desktop AND small phones. */
+.theme-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--sf-border);
+  border-radius: 11px;
+  background: var(--sf-surface);
+  color: var(--sf-secondary);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.theme-toggle:hover { background: var(--sf-raised); color: var(--sf-accent); }
+.theme-toggle:focus-visible, .theme-option:focus-visible { outline: 3px solid var(--sf-accent); outline-offset: 2px; }
+.theme-toggle-floating { position: fixed; z-index: 10; top: max(17px, env(safe-area-inset-top)); right: 18px; box-shadow: var(--sf-shadow); }
+.theme-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.theme-option {
+  display: flex; min-width: 0; min-height: 78px; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--sf-border); border-radius: 12px;
+  background: var(--sf-input); color: var(--sf-secondary);
+  font-size: 12px; font-weight: 750; cursor: pointer;
+}
+.theme-option:hover { background: var(--sf-raised); }
+.theme-option.selected { border-color: var(--sf-accent); color: var(--sf-accent); background: var(--sf-raised); box-shadow: inset 0 0 0 1px var(--sf-accent); }
+@media (max-width: 720px) {
+  .topbar-right { gap: 7px; }
+  .topbar-right .theme-toggle { width: 37px; height: 37px; }
+  .topbar-right .theme-toggle svg { width: 18px; height: 18px; }
+}
+@media (max-width: 370px) {
+  .topbar-right .theme-toggle { width: 34px; height: 34px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle, .theme-option { transition: none; }
+}
+
+/* Dark palette: every major surface, input and text group is covered.
+   Using class-level overrides preserves the existing layout and responsive rules. */
+:root[data-theme="dark"] {
+  background: var(--sf-bg);
+  color: var(--sf-ink);
+}
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .app-shell,
+:root[data-theme="dark"] .main-wrap { background: var(--sf-bg); color: var(--sf-ink); }
+:root[data-theme="dark"] .sidebar {
+  background: linear-gradient(165deg, #111d2e, #18283c 70%, #1d3047);
+  border-right: 1px solid #2b4058;
+}
+:root[data-theme="dark"] .sidebar-foot { border-color: var(--sf-border); }
+:root[data-theme="dark"] .sidebar-tag,
+:root[data-theme="dark"] .sidebar-user small { color: #9bacc2; }
+:root[data-theme="dark"] .nav-item { color: #b6c9df; }
+:root[data-theme="dark"] .nav-item:hover,
+:root[data-theme="dark"] .nav-item.selected { color: #f5f8ff; background: #284363; }
+
+:root[data-theme="dark"] .topbar,
+:root[data-theme="dark"] .surface,
+:root[data-theme="dark"] .kpi,
+:root[data-theme="dark"] .settings-card,
+:root[data-theme="dark"] .dialog,
+:root[data-theme="dark"] .order-sheet,
+:root[data-theme="dark"] .order-footer,
+:root[data-theme="dark"] .mobile-bottom-nav,
+:root[data-theme="dark"] .login-card,
+:root[data-theme="dark"] .access-card {
+  background: var(--sf-surface);
+  border-color: var(--sf-border);
+  color: var(--sf-ink);
+  box-shadow: var(--sf-shadow);
+}
+:root[data-theme="dark"] .topbar-search,
+:root[data-theme="dark"] .order-search,
+:root[data-theme="dark"] .table-search,
+:root[data-theme="dark"] .order-total,
+:root[data-theme="dark"] .segmented,
+:root[data-theme="dark"] .stock-item,
+:root[data-theme="dark"] .access-card code {
+  background: var(--sf-muted-surface);
+  color: var(--sf-secondary);
+  border-color: var(--sf-border);
+}
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] .settings-save input,
+:root[data-theme="dark"] .form-stack input,
+:root[data-theme="dark"] .order-reference input,
+:root[data-theme="dark"] .price-field input,
+:root[data-theme="dark"] .language-control select {
+  background: var(--sf-input);
+  color: var(--sf-ink);
+  border-color: var(--sf-border);
+  caret-color: var(--sf-accent);
+}
+/* Search fields are intentionally transparent inside their dark parent containers. */
+:root[data-theme="dark"] .topbar-search input,
+:root[data-theme="dark"] .table-search input,
+:root[data-theme="dark"] .order-search input,
+:root[data-theme="dark"] .qty-controls input {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sf-ink);
+}
+:root[data-theme="dark"] input::placeholder { color: #899eb8; opacity: 1; }
+:root[data-theme="dark"] input:focus { box-shadow: 0 0 0 3px #28538888; }
+
+:root[data-theme="dark"] .btn-secondary,
+:root[data-theme="dark"] .btn-light,
+:root[data-theme="dark"] .icon-button,
+:root[data-theme="dark"] .segmented button.active,
+:root[data-theme="dark"] .orders-table tbody tr > td:nth-child(7) .icon-button {
+  background: var(--sf-raised);
+  border-color: var(--sf-border);
+  color: var(--sf-ink);
+}
+:root[data-theme="dark"] .btn-secondary:hover,
+:root[data-theme="dark"] .btn-light:hover,
+:root[data-theme="dark"] .icon-button:hover,
+:root[data-theme="dark"] .qty-controls button:hover { background: #2e4663; color: #dbeeff; }
+:root[data-theme="dark"] .btn-primary { background: #287ce0; color: #fff; }
+:root[data-theme="dark"] .btn-primary:hover { background: #368af0; }
+:root[data-theme="dark"] .btn-soft-danger { background: #4c2b3b; border-color: #805064; color: #ffb3bd; }
+:root[data-theme="dark"] .brand-light { color: var(--sf-ink); }
+:root[data-theme="dark"] .user-name,
+:root[data-theme="dark"] .page-head h1,
+:root[data-theme="dark"] .section-heading h2,
+:root[data-theme="dark"] .settings-card h2,
+:root[data-theme="dark"] .finance-card h2,
+:root[data-theme="dark"] .kpi-value,
+:root[data-theme="dark"] .product-cell strong,
+:root[data-theme="dark"] .orders-table strong,
+:root[data-theme="dark"] .order-detail>div>strong,
+:root[data-theme="dark"] .finance-row strong,
+:root[data-theme="dark"] .activity-row strong,
+:root[data-theme="dark"] .dialog-header h2,
+:root[data-theme="dark"] .order-head h2,
+:root[data-theme="dark"] .picker-product strong,
+:root[data-theme="dark"] .order-line-title strong,
+:root[data-theme="dark"] .qty-controls span,
+:root[data-theme="dark"] .line-total,
+:root[data-theme="dark"] .order-total strong,
+:root[data-theme="dark"] .order-total .grand-total,
+:root[data-theme="dark"] .empty-order h3,
+:root[data-theme="dark"] .stock-item strong,
+:root[data-theme="dark"] .settings-label,
+:root[data-theme="dark"] .form-stack>label,
+:root[data-theme="dark"] .two-cols label,
+:root[data-theme="dark"] .carton-copy strong,
+:root[data-theme="dark"] .account-line,
+:root[data-theme="dark"] .order-reference,
+:root[data-theme="dark"] .language-control {
+  color: var(--sf-ink);
+}
+:root[data-theme="dark"] .page-head p,
+:root[data-theme="dark"] .section-heading p,
+:root[data-theme="dark"] .settings-head p,
+:root[data-theme="dark"] .kpi-label,
+:root[data-theme="dark"] .kpi-subtitle,
+:root[data-theme="dark"] .checkbox-line,
+:root[data-theme="dark"] .product-cell small,
+:root[data-theme="dark"] .activity-row small,
+:root[data-theme="dark"] .order-detail-side small,
+:root[data-theme="dark"] .finance-row,
+:root[data-theme="dark"] .finance-card>small,
+:root[data-theme="dark"] .field-note,
+:root[data-theme="dark"] .footer-caption,
+:root[data-theme="dark"] .order-reference small,
+:root[data-theme="dark"] .picker-product small,
+:root[data-theme="dark"] .order-line-title small,
+:root[data-theme="dark"] .price-field,
+:root[data-theme="dark"] .carton-copy small,
+:root[data-theme="dark"] .order-total>div,
+:root[data-theme="dark"] .empty-order,
+:root[data-theme="dark"] .empty-hint,
+:root[data-theme="dark"] .stock-item small,
+:root[data-theme="dark"] .login-card>p,
+:root[data-theme="dark"] .login-card>small,
+:root[data-theme="dark"] .access-card p {
+  color: var(--sf-secondary);
+}
+:root[data-theme="dark"] .product-table th,
+:root[data-theme="dark"] .orders-table th,
+:root[data-theme="dark"] .excel-import-table-scroll th {
+  background: var(--sf-raised);
+  color: #b5c6dc;
+}
+:root[data-theme="dark"] .product-table td,
+:root[data-theme="dark"] .orders-table td {
+  color: var(--sf-secondary);
+  border-color: var(--sf-border);
+}
+:root[data-theme="dark"] .order-head,
+:root[data-theme="dark"] .dialog-header,
+:root[data-theme="dark"] .order-footer,
+:root[data-theme="dark"] .order-line,
+:root[data-theme="dark"] .activity-row,
+:root[data-theme="dark"] .finance-divider,
+:root[data-theme="dark"] .order-total .grand-total,
+:root[data-theme="dark"] .carton-row,
+:root[data-theme="dark"] .order-extra-costs .carton-row,
+:root[data-theme="dark"] .mobile-bottom-nav {
+  border-color: var(--sf-border);
+}
+:root[data-theme="dark"] .status-done { background: #163f38; color: #79dfaf; }
+:root[data-theme="dark"] .status-canceled { background: #4c2b3b; color: #ff9ca8; }
+:root[data-theme="dark"] .count-tag { background: #293e57; color: #cce2ff; }
+:root[data-theme="dark"] .profit-cell { color: #6ae8b6!important; }
+:root[data-theme="dark"] .negative { color: #ff9da8!important; }
+:root[data-theme="dark"] .low-stock { color: #ffb484; }
+:root[data-theme="dark"] .finance-total strong,
+:root[data-theme="dark"] .order-total .grand-total strong { color: #6de4b6; }
+:root[data-theme="dark"] .muted-col { color: #a3b5cb!important; }
+
+:root[data-theme="dark"] .product-icon,
+:root[data-theme="dark"] .product-icon-1,
+:root[data-theme="dark"] .product-icon-2,
+:root[data-theme="dark"] .product-icon-3 {
+  background: linear-gradient(135deg, #2a3e57, #203147);
+  color: #9cbedf;
+  border-color: var(--sf-border);
+}
+:root[data-theme="dark"] .kpi-icon.blue,
+:root[data-theme="dark"] .settings-icon.blue,
+:root[data-theme="dark"] .finance-icon,
+:root[data-theme="dark"] .login-illustration-inner { background: #263e63; color: #89baff; }
+:root[data-theme="dark"] .kpi-icon.mint,
+:root[data-theme="dark"] .settings-icon.mint,
+:root[data-theme="dark"] .activity-circle.pos { background: #1c453e; color: #74ddbb; }
+:root[data-theme="dark"] .kpi-icon.amber,
+:root[data-theme="dark"] .settings-icon.amber,
+:root[data-theme="dark"] .carton-icon { background: #49392c; color: #ffd09a; }
+:root[data-theme="dark"] .kpi-icon.teal { background: #23454c; color: #7ed9e8; }
+:root[data-theme="dark"] .activity-circle.neg { background: #47332f; color: #ffc6a1; }
+
+:root[data-theme="dark"] .picker-list,
+:root[data-theme="dark"] .qty-controls,
+:root[data-theme="dark"] .excel-import-table-scroll { border-color: var(--sf-border); background: var(--sf-input); }
+:root[data-theme="dark"] .picker-product { background: var(--sf-surface); border-color: var(--sf-border); color: #b8d5f4; }
+:root[data-theme="dark"] .picker-product:hover { background: var(--sf-raised); }
+:root[data-theme="dark"] .add-another { background: #223955; border-color: #365b83; color: #9dccff; }
+:root[data-theme="dark"] .qty-controls { background: var(--sf-input); }
+:root[data-theme="dark"] .qty-controls button { color: var(--sf-secondary); }
+:root[data-theme="dark"] .order-extra-costs .shipping-row .carton-icon { background: #253f61; color: #91c6ff; }
+:root[data-theme="dark"] .order-extra-costs { background: var(--sf-muted-surface); border-color: var(--sf-border); }
+
+:root[data-theme="dark"] .login-page,
+:root[data-theme="dark"] .access-denied {
+  background: radial-gradient(circle at 80% 10%, #1e3550, transparent 35%), linear-gradient(125deg, #0e1726, #152237);
+}
+:root[data-theme="dark"] .segmented button { color: var(--sf-secondary); }
+:root[data-theme="dark"] .segmented button.active { color: #89bbff; }
+:root[data-theme="dark"] .mobile-bottom-nav button { color: #a6b6ce; }
+:root[data-theme="dark"] .mobile-bottom-nav button.selected { color: #96c7ff; }
+:root[data-theme="dark"] .cloud-live { background: #173e35; border-color: #295d4a; color: #86dfb2; }
+:root[data-theme="dark"] .cloud-demo,
+:root[data-theme="dark"] .demo-banner { background: #473824; border-color: #705432; color: #ffe1aa; }
+:root[data-theme="dark"] .error-banner { background: #47282e; border-color: #79454d; color: #ffb8be; }
+
+/* Excel importer, including review tables and warnings. */
+:root[data-theme="dark"] .excel-file-picker { background: #243c58; border-color: #526e92; color: #a7d0ff; }
+:root[data-theme="dark"] .excel-file-picker:hover { background: #2a4768; }
+:root[data-theme="dark"] .excel-import-help,
+:root[data-theme="dark"] .excel-import-meta small { color: var(--sf-secondary); }
+:root[data-theme="dark"] .excel-import-stats span { background: var(--sf-raised); border-color: var(--sf-border); color: var(--sf-secondary); }
+:root[data-theme="dark"] .excel-import-stats strong { color: var(--sf-ink); }
+:root[data-theme="dark"] .excel-import-table-scroll th,
+:root[data-theme="dark"] .excel-import-table-scroll td { border-color: var(--sf-border); }
+:root[data-theme="dark"] .excel-import-warnings { color: #ffcd81; }
+:root[data-theme="dark"] .excel-import-error { color: #ffb9c0; background: #4c2a35; }
+
+/* Admin panel, including its separate class names. */
+:root[data-theme="dark"] .admin-overview-item,
+:root[data-theme="dark"] .admin-row { background: var(--sf-surface); border-color: var(--sf-border); color: var(--sf-ink); }
+:root[data-theme="dark"] .admin-overview-item strong,
+:root[data-theme="dark"] .admin-person strong { color: var(--sf-ink); }
+:root[data-theme="dark"] .admin-overview-item small,
+:root[data-theme="dark"] .admin-person small,
+:root[data-theme="dark"] .admin-footnote { color: var(--sf-secondary); }
+:root[data-theme="dark"] .admin-person-icon { background: #274362; color: #9bcaff; }
+:root[data-theme="dark"] .admin-fixed { color: #aad1ff; }
+:root[data-theme="dark"] .admin-status.enabled { color: #7cdead; background: #1b4837; }
+:root[data-theme="dark"] .admin-status.disabled { color: #ffbe9a; background: #4a342f; }
+
+/* Existing mobile card layout uses light backgrounds defined in the legacy mobile CSS. */
+@media (max-width: 720px) {
+  :root[data-theme="dark"] .product-table tbody tr,
+  :root[data-theme="dark"] .orders-table tbody tr {
+    background: var(--sf-surface);
+    border-color: var(--sf-border);
+    box-shadow: var(--sf-shadow);
+  }
+  :root[data-theme="dark"] .product-table tbody tr > td:first-child,
+  :root[data-theme="dark"] .orders-table tbody tr > td:first-child { border-color: var(--sf-border); }
+  :root[data-theme="dark"] .product-table td::before,
+  :root[data-theme="dark"] .orders-table td::before { color: #aac0da; }
+}

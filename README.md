@@ -6,7 +6,7 @@ StockFlow was created to replace a spreadsheet-based inventory workflow with a r
 
 **Built with:** React · TypeScript · Vite · Firebase Authentication · Cloud Firestore
 
-**Current version:** v1.2.1  
+**Current version:** v1.3.0  
 **Interface languages:** Turkish · French · Dutch · English
 
 ## Features
@@ -22,6 +22,7 @@ StockFlow was created to replace a spreadsheet-based inventory workflow with a r
 - **Real-time synchronization:** Keep authorized users up to date across devices.
 - **Access approval:** Users can register with email and password but cannot access inventory until an administrator approves their membership.
 - **Responsive PWA:** Desktop and mobile layouts with installable-app support in compatible browsers.
+- **Light, dark, and system themes:** Switch appearance from the header or Settings; automatically follow device preferences and remember the selection locally.
 - **Multilingual interface:** Switch between Turkish, French, Dutch, and English in Settings.
 
 ## Screens
@@ -32,7 +33,7 @@ StockFlow was created to replace a spreadsheet-based inventory workflow with a r
 | **Products** | Product catalog, pricing, stock changes, and archiving |
 | **Orders** | Multi-product orders, parcel/carton counts, and cancellations |
 | **Management** | Review membership records and approve or revoke inventory access |
-| **Settings** | Language, shipping/carton costs, Excel import/export, and inventory utilities |
+| **Settings** | Language, appearance (light/dark/system), shipping/carton costs, Excel import/export, and inventory utilities |
 
 ## Getting Started
 
@@ -75,6 +76,12 @@ firebase deploy --only hosting --project YOUR_PROJECT_ID
 ```
 
 Firebase Hosting must be configured to serve the Vite `dist` directory with a single-page-app rewrite to `index.html`.
+
+## Appearance
+
+StockFlow offers **Light**, **Dark**, and **System** appearance modes across desktop and mobile layouts. Use the header theme toggle for quick switching, or open **Settings → Appearance** to select a mode. The System option follows your operating system’s color-scheme preference, including changes made while the app is open.
+
+Theme preference is stored in the browser on each device, not in Firestore, and therefore does not alter or synchronize business data.
 
 ## Inventory and Profit Logic
 

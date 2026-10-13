@@ -5,7 +5,7 @@ import {
   ChevronRight, ClipboardList, Cloud, Download, Edit3, FileSpreadsheet,
   Home, Info, LoaderCircle, LockKeyhole, LogOut, Menu, Minus,
   Package, PackageCheck, PackagePlus, Plus, RotateCcw, Search, Settings,
-  ShieldCheck, ShoppingBag, ShoppingCart, Trash2, Truck,
+  ShieldCheck, ShoppingBag, ShoppingCart, Trash2, Truck, Sun, Moon, Monitor,
   TrendingUp, UserRound, Wallet, X, type LucideIcon
 } from 'lucide-react';
 import { browserLocalPersistence, createUserWithEmailAndPassword, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
@@ -20,6 +20,7 @@ import AccessRequest from './components/AccessRequest';
 import ExcelImport from './components/ExcelImport';
 import { useI18n } from './i18n';
 import LanguageSelect from './i18n/LanguageSelect';
+import { useTheme } from './theme/ThemeProvider';
 import './shipping.css';
 
 type Page = 'dashboard' | 'products' | 'orders' | 'settings' | 'admin';
@@ -60,7 +61,7 @@ function Login({ onLoginError }: { onLoginError: (msg: string) => void }) {
         : register ? t("Hesap oluşturulamadı. E-posta ve şifreyi kontrol et.") : t("E-posta veya şifre hatalı."));
     } finally { setBusy(false); }
   }
-  return <div className="login-page"><div className="login-card">
+  return <div className="login-page"><ThemeToggle floating/><div className="login-card">
     <Logo dark={false} />
     <div className="auth-language"><LanguageSelect compact /></div>
     <div className="login-illustration"><div className="login-illustration-inner"><PackageCheck size={46}/></div></div>
@@ -79,6 +80,16 @@ function Login({ onLoginError }: { onLoginError: (msg: string) => void }) {
 }
 function Logo({ dark = true }: { dark?: boolean }) {
   return <div className={`brand ${dark ? 'brand-dark' : 'brand-light'}`}><span className="brand-symbol"><Box size={23} strokeWidth={2.5}/></span><span>Stock<span className="brand-lightweight">Flow</span></span></div>;
+}
+function ThemeToggle({ floating = false }: { floating?: boolean }) {
+  const { t } = useI18n();
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  return <button type="button" className={`theme-toggle ${floating ? 'theme-toggle-floating' : ''}`}
+    onClick={toggleTheme} aria-label={t(isDark ? 'Gündüz moduna geç' : 'Gece moduna geç')}
+    title={t(isDark ? 'Gündüz moduna geç' : 'Gece moduna geç')}>
+    {isDark ? <Sun size={20} aria-hidden="true"/> : <Moon size={20} aria-hidden="true"/>}
+  </button>;
 }
 function ToastStack({ toasts }: { toasts: Toast[] }) {
   return <div className="toast-stack" role="status">{toasts.map(t => <div className={`toast ${t.error ? 'toast-error' : ''}`} key={t.id}>{t.error ? <Info size={18}/> : <CheckCircle2 size={18}/>}<span>{t.message}</span></div>)}</div>;
@@ -189,6 +200,23 @@ function OrderCreator({data,repo,onClose,notify}: {data: AppData;repo:StockRepos
     </div><footer className="order-footer"><button className="btn btn-secondary" onClick={onClose} disabled={busy}>{t("Vazgeç")}</button><button className="btn btn-primary" onClick={submit} disabled={busy||!items.length||rows.some(({item:l,product:p})=>l.quantity>p.quantity||l.quantity<1)}>{busy?<LoaderCircle className="spin" size={17}/>:<Check size={18}/>} {t("Siparişi Kaydet")}</button></footer>
   </section></div>;
 }
+function ThemeSettings() {
+  const { t } = useI18n();
+  const { preference, setPreference } = useTheme();
+  const choices = [
+    { value: 'light' as const, label: t('Gündüz'), icon: Sun },
+    { value: 'dark' as const, label: t('Gece'), icon: Moon },
+    { value: 'system' as const, label: t('Otomatik'), icon: Monitor },
+  ];
+  return <div className="theme-options" role="group" aria-label={t('Görünüm')}>
+    {choices.map(({ value, label, icon: Icon }) =>
+      <button key={value} type="button" className={`theme-option ${preference === value ? 'selected' : ''}`}
+        aria-pressed={preference === value} onClick={() => setPreference(value)}>
+        <Icon size={19} aria-hidden="true"/><span>{label}</span>
+      </button>
+    )}
+  </div>;
+}
 function SettingsPage({data,repo,notify,email,cloud,onExport}: {data:AppData;repo:StockRepository;notify:(msg:string,error?:boolean)=>void;email:string;cloud:boolean;onExport:()=>Promise<void>}){
   const { t } = useI18n();
   const [cartonPrice,setCartonPrice]=useState(moneyInput(data.settings.cartonUnitCostCents)); const [shippingPrice,setShippingPrice]=useState(moneyInput(data.settings.shippingUnitCostCents ?? 360)); const [busy,setBusy]=useState(false);
@@ -212,6 +240,9 @@ function SettingsPage({data,repo,notify,email,cloud,onExport}: {data:AppData;rep
   return <div className="settings-grid"><section className="surface settings-card settings-language-card">
     <div className="settings-head"><div className="settings-icon blue"><ShieldCheck size={22}/></div><div><h2>{t("Uygulama dili")}</h2><p>{t("Tercihin bu cihazda saklanır.")}</p></div></div>
     <LanguageSelect/>
+    </section><section className="surface settings-card settings-theme-card">
+    <div className="settings-head"><div className="settings-icon blue"><Moon size={22}/></div><div><h2>{t("Görünüm")}</h2><p>{t("Göz konforun için tema seç. Tercihin bu cihazda saklanır.")}</p></div></div>
+    <ThemeSettings/>
     </section><section className="surface settings-card"><div className="settings-head"><div className="settings-icon blue"><Box size={22}/></div><div><h2>{t("Karton maliyeti")}</h2><p>{t("Her siparişte kullanılan karton adedine göre düşülür.")}</p></div></div><label className="settings-label">{t("Birim karton maliyeti (€)")}<div className="settings-save"><input inputMode="decimal" value={cartonPrice} onChange={e=>setCartonPrice(e.target.value)}/><button className="btn btn-primary" onClick={save} disabled={busy}>{t("Kaydet")}</button></div></label><p className="field-note">{t("Eski siparişlerin karton bedeli değişmez.")}</p></section>
     <section className="surface settings-card"><div className="settings-head"><div className="settings-icon blue"><Truck size={22}/></div><div><h2>{t("Kargo maliyeti")}</h2><p>{t("Ürün başına değil, gönderilen paket sayısına göre hesaplanır.")}</p></div></div><label className="settings-label">{t("Paket başına kargo maliyeti (€)")}<div className="settings-save"><input inputMode="decimal" value={shippingPrice} onChange={e=>setShippingPrice(e.target.value)}/><button className="btn btn-primary" onClick={saveShipping} disabled={busy}>{t("Kaydet")}</button></div></label><p className="field-note">{t("Eski siparişlerin kargo bedeli değişmez.")}</p></section>
     {needsLegacyShippingMigration && <section className="surface settings-card"><div className="settings-head"><div className="settings-icon amber"><PackagePlus size={22}/></div><div><h2>{t("Eski ürün maliyetlerini düzelt")}</h2><p>{t("Başlangıçtaki 6 ürünün maliyetinden dahil edilmiş 3,60 € kargoyu bir kez ayırır. Mevcut stok adetlerini ve eski siparişleri değiştirmez.")}</p></div></div><button className="btn btn-secondary" onClick={migrateCosts} disabled={busy||Boolean(data.settings.shippingSeparatedAt)}>{t("6 ürünün maliyetinden kargoyu ayır")}</button>{data.settings.shippingSeparatedAt&&<small className="inline-success"><CheckCircle2 size={14}/>{t("Maliyet ayrıştırması tamamlandı.")}</small>}</section>}
@@ -237,7 +268,7 @@ function AppContent({ repo, email, cloud, isAdmin, uid }: { repo: StockRepositor
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav?'mobile-open':''}`}><div className="sidebar-brand"><Logo/></div><div className="sidebar-tag">WORKSPACE</div><nav className="sidebar-nav">{navItems.map(({key,label,icon:Icon})=><button key={key} className={`nav-item ${page===key?'selected':''}`} onClick={()=>changePage(key)}><Icon size={19}/>{t(label)}{page===key&&<ChevronRight className="nav-arrow" size={17}/>}</button>)}</nav><div className="sidebar-foot"><span className="avatar">{email[0]?.toUpperCase() || 'S'}</span><span className="sidebar-user"><strong>{cloud?t("Yetkili kullanıcı"):t("Demo kullanıcı")}</strong><small>{email}</small></span></div></aside>
     {mobileNav && <div className="nav-scrim" onClick={()=>setMobileNav(false)}/>}
-    <div className="main-wrap"><header className="topbar"><button className="icon-button mobile-menu" aria-label={t("Menüyü aç")} onClick={()=>setMobileNav(v=>!v)}><Menu size={22}/></button><div className="topbar-search"><Search size={18}/><input placeholder={t("Ürün, sipariş veya marka ara...")} value={search} onChange={e=>{setSearch(e.target.value);if(e.target.value.trim())setPage('products')}}/></div><div className="topbar-right"><span className={`cloud-state ${cloud?'cloud-live':'cloud-demo'}`}><Cloud size={15}/>{cloud?t("Firebase bağlı"):t("Demo modu")}</span><span className="top-avatar">{email[0]?.toUpperCase()||'D'}</span><span className="user-name">{email.split('@')[0]}</span></div></header>
+    <div className="main-wrap"><header className="topbar"><button className="icon-button mobile-menu" aria-label={t("Menüyü aç")} onClick={()=>setMobileNav(v=>!v)}><Menu size={22}/></button><div className="topbar-search"><Search size={18}/><input placeholder={t("Ürün, sipariş veya marka ara...")} value={search} onChange={e=>{setSearch(e.target.value);if(e.target.value.trim())setPage('products')}}/></div><div className="topbar-right"><ThemeToggle/><span className={`cloud-state ${cloud?'cloud-live':'cloud-demo'}`}><Cloud size={15}/>{cloud?t("Firebase bağlı"):t("Demo modu")}</span><span className="top-avatar">{email[0]?.toUpperCase()||'D'}</span><span className="user-name">{email.split('@')[0]}</span></div></header>
     {!cloud&&<div className="demo-banner"><Info size={17}/><span><strong>{t("Demo sürümündesin.")}</strong> {t("Veriler bu tarayıcıda saklanır; başka telefonla paylaşılmaz. Firebase kurulumu için KURULUM-TR.md dosyasını izle.")}</span></div>}
     {error&&<div className="error-banner"><Info size={18}/>{error}</div>}
     <main className="main-content">
@@ -332,6 +363,6 @@ export default function App() {
   if (!authReady) return <div className="center-loading"><LoaderCircle className="spin" size={32}/><p>{t("Güvenli oturum kontrol ediliyor...")}</p></div>;
   if (configured && authError) return <div className="access-denied"><div className="access-card"><Info size={40}/><h1>{t("Bağlantı hatası")}</h1><p>{authError}</p><button className="btn btn-secondary" onClick={() => window.location.reload()}>{t("Yeniden dene")}</button></div></div>;
   if (configured && !user) return <><Login onLoginError={setLoginError}/>{loginError && <div className="login-error" onClick={() => setLoginError('')}>{loginError} <X size={15}/></div>}</>;
-  if (configured && user && !member?.active) return <AccessRequest user={user}/>;
+  if (configured && user && !member?.active) return <><ThemeToggle floating/><AccessRequest user={user}/></>;
   return <AppContent repo={repo} email={user?.email || 'demo@stockflow.local'} cloud={configured} isAdmin={member?.role === 'admin'} uid={user?.uid || ''}/>;
 }

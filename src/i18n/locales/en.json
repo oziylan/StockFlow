@@ -299,5 +299,12 @@
   "ürün atlandı": "products skipped",
   "Komisyon, KDV ve diğer giderler dahil değildir.": "Excludes commissions, VAT and other expenses.",
   "Ürün maliyeti (kargo hariç)": "Product cost (excl. shipping)",
-  "Ürün maliyeti, kargo hariç (€) *": "Product cost, excl. shipping (€) *"
+  "Ürün maliyeti, kargo hariç (€) *": "Product cost, excl. shipping (€) *",
+  "Görünüm": "Appearance",
+  "Göz konforun için tema seç. Tercihin bu cihazda saklanır.": "Choose a comfortable theme. Your preference is saved on this device.",
+  "Gündüz": "Light",
+  "Gece": "Dark",
+  "Otomatik": "System",
+  "Gündüz moduna geç": "Switch to light mode",
+  "Gece moduna geç": "Switch to dark mode"
 }
